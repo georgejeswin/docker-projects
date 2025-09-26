@@ -1,11 +1,13 @@
 const express = require("express");
 const mongoose = require("mongoose");
+require('dotenv').config(); // load local .env if exists
+
 const Product = require("./product.model");
 
 const app = express();
 app.use(express.json());
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/products";
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URI_FILE;
 mongoose.connect(MONGO_URI).then(() => console.log("Product DB connected"));
 
 app.post("/products", async (req, res) => {
