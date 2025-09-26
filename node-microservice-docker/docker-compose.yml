@@ -1,9 +1,9 @@
-version: "3.8"
+version: "3.9"
 services:
   gateway:
     build: ./gateway
     ports:
-      - "4000:4000"
+      - "5000:5000"
     depends_on:
       - user-service
       - product-service
@@ -13,43 +13,52 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - MONGO_URI_FILE=/run/secrets/user-mongo-uri
-    secrets:
-      - user-mongo-uri
+      - MONGO_URI=mongodb://user-mongo:27017/users
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URI=amqp://rabbitmq:5672
     depends_on:
       - user-mongo
-
-  user-mongo:
-    image: mongo:6
-    volumes:
-      - user_data:/data/db
-    ports:
-      - "27018:27017"
+      - redis
+      - rabbitmq
 
   product-service:
     build: ./product-service
     ports:
       - "3002:3002"
     environment:
-      - MONGO_URI_FILE=/run/secrets/product-mongo-uri
-    secrets:
-      - product-mongo-uri
+      - MONGO_URI=mongodb://product-mongo:27017/products
+      - RABBITMQ_URI=amqp://rabbitmq:5672
     depends_on:
       - product-mongo
+      - rabbitmq
+
+  user-mongo:
+    image: mongo:6
+    ports:
+      - "27018:27017"
+    volumes:
+      - user_mongo_data:/data/db
 
   product-mongo:
     image: mongo:6
-    volumes:
-      - product_data:/data/db
     ports:
       - "27019:27017"
+    volumes:
+      - product_mongo_data:/data/db
 
-secrets:
-  user-mongo-uri:
-    file: ./secrets/user-mongo-uri.txt
-  product-mongo-uri:
-    file: ./secrets/product-mongo-uri.txt
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"   # apps
+      - "15672:15672" # UI
 
 volumes:
-  user_data:
-  product_data:
+  user_mongo_data:
+  product_mongo_data:
